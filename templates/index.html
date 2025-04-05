@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Health Monitor</title>
+    <link rel="stylesheet" href="static\css\styles.css">
+</head>
+<body>
+    <h1>System Health Monitor</h1>
+
+    <h2>System Info</h2>
+    <div class="stat" id="os"></div>
+    <div class="stat" id="version"></div>
+    <div class="stat" id="hostname"></div>
+    <div class="stat" id="username"></div>
+
+    <h2>Laptop Info</h2>
+    <div class="stat" id="manufacturer"></div>
+    <div class="stat" id="model"></div>
+    <div class="stat" id="battery"></div>
+
+    <h2>Resource Usage</h2>
+    <div class="stat" id="cpu"></div>
+    <div class="stat" id="memory"></div>
+    <div class="stat" id="disk"></div>
+    <div class="stat" id="processes"></div>
+
+    <div class="error" id="error"></div>
+
+    <script>
+        // Fetch the system stats from the backend
+        async function fetchStats() {
+            try {
+                let response = await fetch('http://127.0.0.1:5000/api/stats');
+                let data = await response.json();
+                
+                // Handle errors if any
+                if (data.error) {
+                    document.getElementById("error").innerText = data.error;
+                    return;
+                }
+
+                // System Info
+                document.getElementById("os").innerText = `OS: ${data.system_info.os_name}`;
+                document.getElementById("version").innerText = `Version: ${data.system_info.os_version} (${data.system_info.os_release})`;
+                document.getElementById("hostname").innerText = `Hostname: ${data.system_info.hostname}`;
+                document.getElementById("username").innerText = `Current User: ${data.system_info.username}`;
+
+                // Laptop Info (if available)
+                const laptopInfo = data.system_info.laptop_info;
+                if (laptopInfo.error) {
+                    document.getElementById("manufacturer").innerText = "Laptop info not available on this OS";
+                    document.getElementById("model").innerText = "";
+                    document.getElementById("battery").innerText = "";
+                } else {
+                    document.getElementById("manufacturer").innerText = `Manufacturer: ${laptopInfo.manufacturer}`;
+                    document.getElementById("model").innerText = `Model: ${laptopInfo.model}`;
+                    document.getElementById("battery").innerText = `Battery: ${laptopInfo.battery_charge}% (${laptopInfo.battery_status})`;
+                }
+
+                // Resource Stats
+                document.getElementById("cpu").innerText = `CPU Usage: ${data.resource_stats.cpu_usage}%`;
+                document.getElementById("memory").innerText = `Memory Usage: ${data.resource_stats.memory_usage}%`;
+                document.getElementById("disk").innerText = `Disk Usage: ${data.resource_stats.disk_usage}%`;
+                document.getElementById("processes").innerText = `Running Processes: ${data.resource_stats.running_processes}`;
+                
+            } catch (error) {
+                console.error("Error fetching system stats:", error);
+                document.getElementById("error").innerText = "Error fetching system stats from the server.";
+            }
+        }
+
+        // Call fetchStats every 5 seconds to keep data updated
+        setInterval(fetchStats, 5000);
+
+        // Initial data fetch
+        fetchStats();
+    </script>
+</body>
+</html>
